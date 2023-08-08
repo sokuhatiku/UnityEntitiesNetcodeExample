@@ -2,6 +2,8 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
 using Unity.Burst;
+using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 
 // RPC request from client to server for game to go "in game" and send snapshots / inputs
@@ -28,13 +30,15 @@ public partial struct GoInGameClientSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
-        foreach (var (id, entity) in SystemAPI.Query<RefRO<NetworkId>>().WithEntityAccess().WithNone<NetworkStreamInGame>())
+        foreach (var (id, entity) in SystemAPI.Query<RefRO<NetworkId>>().WithEntityAccess()
+                     .WithNone<NetworkStreamInGame>())
         {
             commandBuffer.AddComponent<NetworkStreamInGame>(entity);
             var req = commandBuffer.CreateEntity();
             commandBuffer.AddComponent<GoInGameRequest>(req);
             commandBuffer.AddComponent(req, new SendRpcCommandRequest { TargetConnection = entity });
         }
+
         commandBuffer.Playback(state.EntityManager);
     }
 }
@@ -67,20 +71,33 @@ public partial struct GoInGameServerSystem : ISystem
 
         var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
         networkIdFromEntity.Update(ref state);
+        var random = Unity.Mathematics.Random.CreateFromIndex(state.GlobalSystemVersion);
 
-        foreach (var (reqSrc, reqEntity) in SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>>().WithAll<GoInGameRequest>().WithEntityAccess())
+        foreach (var (reqSrc, reqEntity) in SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>>()
+                     .WithAll<GoInGameRequest>().WithEntityAccess())
         {
             commandBuffer.AddComponent<NetworkStreamInGame>(reqSrc.ValueRO.SourceConnection);
             var networkId = networkIdFromEntity[reqSrc.ValueRO.SourceConnection];
 
-            UnityEngine.Debug.Log($"'{worldName}' setting connection '{networkId.Value}' to in game, spawning a Ghost '{prefabName}' for them!");
+            UnityEngine.Debug.Log(
+                $"'{worldName}' setting connection '{networkId.Value}' to in game, spawning a Ghost '{prefabName}' for them!");
             var player = commandBuffer.Instantiate(prefab);
-            commandBuffer.SetComponent(player, new GhostOwner { NetworkId = networkId.Value});
-            commandBuffer.AppendToBuffer(reqSrc.ValueRO.SourceConnection, new LinkedEntityGroup{Value = player});
+            commandBuffer.SetComponent(player,
+                new LocalTransform
+                {
+                    Position = new float3(
+                        random.NextFloat(-5, 5),
+                        0,
+                        random.NextFloat(-5, 5)),
+                    Rotation = quaternion.identity,
+                    Scale = 1
+                });
+            commandBuffer.SetComponent(player, new GhostOwner { NetworkId = networkId.Value });
+            commandBuffer.AppendToBuffer(reqSrc.ValueRO.SourceConnection, new LinkedEntityGroup { Value = player });
 
             commandBuffer.DestroyEntity(reqEntity);
         }
+
         commandBuffer.Playback(state.EntityManager);
     }
-
 }
