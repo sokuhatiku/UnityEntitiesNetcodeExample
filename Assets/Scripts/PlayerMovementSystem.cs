@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -9,7 +7,7 @@ using UnityEngine;
 
 [UpdateInGroup(typeof(PredictedSimulationSystemGroup))]
 [BurstCompile]
-public partial struct CubeMovementSystem : ISystem
+public partial struct PlayerMovementSystem : ISystem
 {
     [BurstCompile]
     public void OnUpdate(ref SystemState state)
@@ -17,7 +15,8 @@ public partial struct CubeMovementSystem : ISystem
         var speed = SystemAPI.Time.DeltaTime * 4;
         var rotateSpeed = SystemAPI.Time.DeltaTime * 720;
 
-        foreach (var (input, trans) in SystemAPI.Query<RefRO<CubeInput>, RefRW<LocalTransform>>().WithAll<Simulate>())
+        foreach (var (input, trans)
+                 in SystemAPI.Query<RefRO<PlayerInput>, RefRW<LocalTransform>>().WithAll<Simulate>())
         {
             var moveInput = new float2(input.ValueRO.Horizontal, input.ValueRO.Vertical);
             moveInput = math.normalizesafe(moveInput) * speed;

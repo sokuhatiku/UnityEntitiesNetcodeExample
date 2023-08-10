@@ -1,31 +1,29 @@
-using System.Collections;
-using System.Collections.Generic;
 using Unity.Entities;
 using Unity.NetCode;
 using UnityEngine;
 
 [GhostComponent(PrefabType = GhostPrefabType.AllPredicted)]
-public struct CubeInput : IInputComponentData
+public struct PlayerInput : IInputComponentData
 {
     public int Horizontal;
     public int Vertical;
 }
 
 [DisallowMultipleComponent]
-public class CubeInputAuthoring : MonoBehaviour
+public sealed class PlayerInputAuthoring : MonoBehaviour
 {
-    private class Baker : Baker<CubeInputAuthoring>
+    private sealed class Baker : Baker<PlayerInputAuthoring>
     {
-        public override void Bake(CubeInputAuthoring authoring)
+        public override void Bake(PlayerInputAuthoring authoring)
         {
             var entity = GetEntity(TransformUsageFlags.None);
-            AddComponent<CubeInput>(entity);
+            AddComponent<PlayerInput>(entity);
         }
     }
 }
 
 [UpdateInGroup(typeof(GhostInputSystemGroup))]
-public partial struct SampleCubeInput : ISystem
+public partial struct PlayerInputSystem : ISystem
 {
     public void OnUpdate(ref SystemState state)
     {
@@ -34,7 +32,7 @@ public partial struct SampleCubeInput : ISystem
         bool down = UnityEngine.Input.GetKey("down");
         bool up = UnityEngine.Input.GetKey("up");
 
-        foreach (var playerInput in SystemAPI.Query<RefRW<CubeInput>>().WithAll<GhostOwnerIsLocal>())
+        foreach (var playerInput in SystemAPI.Query<RefRW<PlayerInput>>().WithAll<GhostOwnerIsLocal>())
         {
             playerInput.ValueRW = default;
             if (left)
