@@ -21,15 +21,15 @@ public partial struct PlayerMovementSystem : ISystem
             var moveInput = new float2(input.ValueRO.Horizontal, input.ValueRO.Vertical);
             moveInput = math.normalizesafe(moveInput) * speed;
             trans.ValueRW.Position += new float3(moveInput.x, 0, moveInput.y);
-            if (math.lengthsq(moveInput) > 0)
-            {
-                trans.ValueRW.Rotation =
-                    Quaternion.RotateTowards(
-                        trans.ValueRO.Rotation,
-                        quaternion.LookRotationSafe(new float3(moveInput.x, 0, moveInput.y), math.up()),
-                        rotateSpeed);
-                ;
-            }
+            // if (math.lengthsq(moveInput) > 0)
+            // {
+            //     trans.ValueRW.Rotation =
+            //         Quaternion.RotateTowards(
+            //             trans.ValueRO.Rotation,
+            //             quaternion.LookRotationSafe(new float3(moveInput.x, 0, moveInput.y), math.up()),
+            //             rotateSpeed);
+            //     ;
+            // }
         }
     }
 }
