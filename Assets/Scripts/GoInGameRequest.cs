@@ -44,7 +44,7 @@ public partial struct GoInGameClientSystem : ISystem
 }
 
 // When server receives go in game request, go in game and delete request
-[BurstCompile]
+// [BurstCompile]
 [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
 public partial struct GoInGameServerSystem : ISystem
 {
@@ -61,7 +61,7 @@ public partial struct GoInGameServerSystem : ISystem
         networkIdFromEntity = state.GetComponentLookup<NetworkId>(true);
     }
 
-    [BurstCompile]
+    // [BurstCompile]
     public void OnUpdate(ref SystemState state)
     {
         Entity prefab = SystemAPI.GetSingleton<PlayerSpawner>().PlayerPrefab;
@@ -73,7 +73,8 @@ public partial struct GoInGameServerSystem : ISystem
         networkIdFromEntity.Update(ref state);
         var random = Unity.Mathematics.Random.CreateFromIndex(state.GlobalSystemVersion);
 
-        foreach ((var reqSrc, Entity reqEntity) in SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>>()
+        foreach ((var reqSrc, Entity reqEntity) 
+                 in SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>>()
                      .WithAll<GoInGameRequest>().WithEntityAccess())
         {
             commandBuffer.AddComponent<NetworkStreamInGame>(reqSrc.ValueRO.SourceConnection);
@@ -94,6 +95,7 @@ public partial struct GoInGameServerSystem : ISystem
                 });
             commandBuffer.SetComponent(player, new GhostOwner { NetworkId = networkId.Value });
             commandBuffer.AppendToBuffer(reqSrc.ValueRO.SourceConnection, new LinkedEntityGroup { Value = player });
+            commandBuffer.SetComponent(reqSrc.ValueRO.SourceConnection, new CommandTarget { targetEntity = player });
 
             commandBuffer.DestroyEntity(reqEntity);
         }

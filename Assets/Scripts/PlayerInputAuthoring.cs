@@ -32,7 +32,8 @@ public partial struct PlayerInputSystem : ISystem
         bool down = UnityEngine.Input.GetKey("down");
         bool up = UnityEngine.Input.GetKey("up");
 
-        foreach (var playerInput in SystemAPI.Query<RefRW<PlayerInput>>().WithAll<GhostOwnerIsLocal>())
+        foreach (var playerInput
+                 in SystemAPI.Query<RefRW<PlayerInput>>().WithAll<GhostOwnerIsLocal>())
         {
             playerInput.ValueRW = default;
             if (left)
